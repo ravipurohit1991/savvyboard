@@ -36,6 +36,11 @@ export function AdminWorkspaceListPage() {
     },
   });
 
+  const createError = createMutation.error
+    ? (createMutation.error as { response?: { data?: { detail?: string } } }).response?.data
+        ?.detail || "Failed to create workspace. Please try again."
+    : null;
+
   const handleNameChange = (value: string) => {
     setName(value);
     setSlug(
@@ -118,6 +123,9 @@ export function AdminWorkspaceListPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+          {createError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{createError}</p>
+          )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel

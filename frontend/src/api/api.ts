@@ -43,9 +43,9 @@ export const authApi = {
 };
 
 export const workspacesApi = {
-  list: () => api.get<Workspace[]>("/workspaces"),
+  list: () => api.get<Workspace[]>("/workspaces/"),
   get: (id: string) => api.get<Workspace>(`/workspaces/${id}`),
-  create: (data: Partial<Workspace>) => api.post<Workspace>("/workspaces", data),
+  create: (data: Partial<Workspace>) => api.post<Workspace>("/workspaces/", data),
   update: (id: string, data: Partial<Workspace>) => api.patch<Workspace>(`/workspaces/${id}`, data),
   delete: (id: string) => api.delete(`/workspaces/${id}`),
   addMember: (workspaceId: string, email: string, role: string) =>
@@ -59,9 +59,9 @@ export const workspacesApi = {
 };
 
 export const boardsApi = {
-  list: (workspaceId: string) => api.get<Board[]>(`/workspaces/${workspaceId}/boards`),
+  list: (workspaceId: string) => api.get<Board[]>(`/workspaces/${workspaceId}/boards/`),
   create: (workspaceId: string, data: Partial<Board>) =>
-    api.post<Board>(`/workspaces/${workspaceId}/boards`, data),
+    api.post<Board>(`/workspaces/${workspaceId}/boards/`, data),
   update: (workspaceId: string, id: string, data: Partial<Board>) =>
     api.patch<Board>(`/workspaces/${workspaceId}/boards/${id}`, data),
   delete: (workspaceId: string, id: string) =>
@@ -70,9 +70,9 @@ export const boardsApi = {
 
 export const feedbackApi = {
   list: (workspaceId: string, boardId: string) =>
-    api.get<FeedbackItem[]>(`/workspaces/${workspaceId}/boards/${boardId}/feedback`),
+    api.get<FeedbackItem[]>(`/workspaces/${workspaceId}/boards/${boardId}/feedback/`),
   create: (workspaceId: string, boardId: string, data: object) =>
-    api.post<FeedbackItem>(`/workspaces/${workspaceId}/boards/${boardId}/feedback`, data),
+    api.post<FeedbackItem>(`/workspaces/${workspaceId}/boards/${boardId}/feedback/`, data),
   update: (workspaceId: string, boardId: string, id: string, data: object) =>
     api.patch<FeedbackItem>(`/workspaces/${workspaceId}/boards/${boardId}/feedback/${id}`, data),
   delete: (workspaceId: string, boardId: string, id: string) =>
@@ -88,13 +88,13 @@ export const feedbackApi = {
 };
 
 export const roadmapApi = {
-  list: (workspaceId: string) => api.get<RoadmapColumn[]>(`/workspaces/${workspaceId}/roadmap`),
+  list: (workspaceId: string) => api.get<RoadmapColumn[]>(`/workspaces/${workspaceId}/roadmap/`),
 };
 
 export const changelogApi = {
-  list: (workspaceId: string) => api.get<ChangelogEntry[]>(`/workspaces/${workspaceId}/changelog`),
+  list: (workspaceId: string) => api.get<ChangelogEntry[]>(`/workspaces/${workspaceId}/changelog/`),
   create: (workspaceId: string, data: Partial<ChangelogEntry>) =>
-    api.post<ChangelogEntry>(`/workspaces/${workspaceId}/changelog`, data),
+    api.post<ChangelogEntry>(`/workspaces/${workspaceId}/changelog/`, data),
   update: (workspaceId: string, id: string, data: Partial<ChangelogEntry>) =>
     api.patch<ChangelogEntry>(`/workspaces/${workspaceId}/changelog/${id}`, data),
   delete: (workspaceId: string, id: string) =>
