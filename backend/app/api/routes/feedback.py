@@ -1,11 +1,12 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import AnonTokenDep, CurrentUserDep, OptionalUserDep, SessionDep
 from app.crud.board import get_board
 from app.crud.feedback import (
+    FeedbackSort,
     create_comment,
     create_feedback_item,
     delete_feedback_item,
@@ -16,6 +17,7 @@ from app.crud.feedback import (
     update_feedback_item,
     vote_feedback_item,
 )
+from app.models import FeedbackStatus
 from app.schemas.feedback import (
     CommentCreate,
     CommentOut,
@@ -71,11 +73,22 @@ def list_feedback(
     board_id: UUID,
     current_user: OptionalUserDep,
     anon_token: AnonTokenDep,
+    search: str | None = Query(default=None, min_length=1, max_length=200),
+    category: str | None = Query(default=None, min_length=1, max_length=100),
+    status: FeedbackStatus | None = Query(default=None),
+    sort: FeedbackSort = Query(default=FeedbackSort.TOP_VOTED),
 ) -> Any:
     board = get_board(session, board_id)
     if not board or board.workspace_id != workspace_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Board not found")
-    items = list_feedback_items(session, board_id)
+    items = list_feedback_items(
+        session,
+        board_id,
+        search=search,
+        category=category,
+        status=status,
+        sort=sort,
+    )
     return [
         _serialize_item(item, current_user.id if current_user else None, anon_token, session)
         for item in items
