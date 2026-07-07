@@ -8,6 +8,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FeedbackFilterBar } from "@/components/ui/FeedbackFilterBar";
+import {
+  DEFAULT_FILTER_VALUES,
+  type FeedbackFilterValues,
+} from "@/components/ui/feedback-filter-types";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { FeedbackStatus } from "@/types";
@@ -31,10 +36,20 @@ const STATUS_VARIANTS: Record<
   closed: "danger",
 };
 
+function buildParams(values: FeedbackFilterValues) {
+  const params: Record<string, string> = {};
+  if (values.search.trim()) params.search = values.search.trim();
+  if (values.category) params.category = values.category;
+  if (values.status) params.status = values.status;
+  if (values.sort) params.sort = values.sort;
+  return params;
+}
+
 export function AdminFeedbackPage() {
   const { workspaceId } = useParams();
   const queryClient = useQueryClient();
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FeedbackFilterValues>(DEFAULT_FILTER_VALUES);
 
   const { data: boards, isLoading: boardsLoading } = useQuery({
     queryKey: ["boards", workspaceId],
@@ -43,10 +58,11 @@ export function AdminFeedbackPage() {
   });
 
   const boardId = selectedBoardId || boards?.[0]?.id;
+  const activeBoard = boards?.find((b) => b.id === boardId);
 
   const { data: items, isLoading: itemsLoading } = useQuery({
-    queryKey: ["feedback", workspaceId, boardId],
-    queryFn: () => feedbackApi.list(workspaceId!, boardId!).then((r) => r.data),
+    queryKey: ["feedback", workspaceId, boardId, filters],
+    queryFn: () => feedbackApi.list(workspaceId!, boardId!, buildParams(filters)).then((r) => r.data),
     enabled: !!workspaceId && !!boardId,
   });
 
@@ -79,6 +95,16 @@ export function AdminFeedbackPage() {
           />
         )}
       </div>
+
+      {activeBoard && (
+        <FeedbackFilterBar
+          categoryOptions={activeBoard.category_options}
+          statusOptions={STATUS_OPTIONS}
+          values={filters}
+          onValuesChange={setFilters}
+          resultCount={items?.length}
+        />
+      )}
 
       {boardsLoading || itemsLoading ? (
         <div className="space-y-3">
@@ -134,8 +160,12 @@ export function AdminFeedbackPage() {
       ) : (
         <EmptyState
           icon={MessageSquare}
-          title="No feedback yet"
-          description="Share your public board link to start collecting ideas."
+          title={filters.search || filters.category || filters.status ? "No matching feedback" : "No feedback yet"}
+          description={
+            filters.search || filters.category || filters.status
+              ? "Try adjusting your search or filters."
+              : "Share your public board link to start collecting ideas."
+          }
         />
       )}
     </div>

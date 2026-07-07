@@ -1,23 +1,64 @@
 from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlmodel import Session, select
 
 from app.models import Board, Comment, FeedbackItem, FeedbackStatus, Vote
 from app.schemas.feedback import CommentCreate, FeedbackItemCreate, FeedbackItemUpdate
 
 
+class FeedbackSort(StrEnum):
+    TOP_VOTED = "top_voted"
+    NEWEST = "newest"
+    OLDEST = "oldest"
+    RECENTLY_UPDATED = "recently_updated"
+
+
 def get_feedback_item(session: Session, item_id: UUID) -> FeedbackItem | None:
     return session.get(FeedbackItem, item_id)
 
 
-def list_feedback_items(session: Session, board_id: UUID) -> list[FeedbackItem]:
-    statement = (
-        select(FeedbackItem)
-        .where(FeedbackItem.board_id == board_id)
-        .order_by(FeedbackItem.vote_count.desc(), FeedbackItem.created_at.desc())
-    )
+def list_feedback_items(
+    session: Session,
+    board_id: UUID,
+    *,
+    search: str | None = None,
+    category: str | None = None,
+    status: FeedbackStatus | None = None,
+    sort: FeedbackSort = FeedbackSort.TOP_VOTED,
+) -> list[FeedbackItem]:
+    statement = select(FeedbackItem).where(FeedbackItem.board_id == board_id)
+
+    if search:
+        pattern = f"%{search}%"
+        statement = statement.where(
+            or_(
+                FeedbackItem.title.ilike(pattern),
+                FeedbackItem.description.ilike(pattern),
+            )
+        )
+
+    if category:
+        statement = statement.where(FeedbackItem.category == category)
+
+    if status:
+        statement = statement.where(FeedbackItem.status == status)
+
+    if sort == FeedbackSort.NEWEST:
+        statement = statement.order_by(FeedbackItem.created_at.desc())
+    elif sort == FeedbackSort.OLDEST:
+        statement = statement.order_by(FeedbackItem.created_at.asc())
+    elif sort == FeedbackSort.RECENTLY_UPDATED:
+        statement = statement.order_by(
+            FeedbackItem.updated_at.desc(), FeedbackItem.created_at.desc()
+        )
+    else:
+        statement = statement.order_by(
+            FeedbackItem.vote_count.desc(), FeedbackItem.created_at.desc()
+        )
+
     return list(session.exec(statement).all())
 
 

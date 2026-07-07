@@ -68,9 +68,18 @@ export const boardsApi = {
     api.delete(`/workspaces/${workspaceId}/boards/${id}`),
 };
 
+export interface FeedbackListParams {
+  search?: string;
+  category?: string;
+  status?: string;
+  sort?: string;
+}
+
 export const feedbackApi = {
-  list: (workspaceId: string, boardId: string) =>
-    api.get<FeedbackItem[]>(`/workspaces/${workspaceId}/boards/${boardId}/feedback/`),
+  list: (workspaceId: string, boardId: string, params?: FeedbackListParams) =>
+    api.get<FeedbackItem[]>(`/workspaces/${workspaceId}/boards/${boardId}/feedback/`, {
+      params,
+    }),
   create: (workspaceId: string, boardId: string, data: object) =>
     api.post<FeedbackItem>(`/workspaces/${workspaceId}/boards/${boardId}/feedback/`, data),
   update: (workspaceId: string, boardId: string, id: string, data: object) =>
@@ -104,8 +113,10 @@ export const changelogApi = {
 export const publicApi = {
   workspace: (slug: string) =>
     api.get<{ workspace: Workspace; boards: Board[] }>(`/public/workspaces/${slug}`),
-  feedback: (slug: string, boardSlug: string) =>
-    api.get<FeedbackItem[]>(`/public/workspaces/${slug}/feedback/${boardSlug}`),
+  feedback: (slug: string, boardSlug: string, params?: FeedbackListParams) =>
+    api.get<FeedbackItem[]>(`/public/workspaces/${slug}/feedback/${boardSlug}`, {
+      params,
+    }),
   submitFeedback: (slug: string, boardSlug: string, data: object) =>
     api.post<FeedbackItem>(`/public/workspaces/${slug}/feedback/${boardSlug}`, data),
   vote: (slug: string, boardSlug: string, itemId: string, anonToken?: string) =>
