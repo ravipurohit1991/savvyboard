@@ -9,6 +9,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import {
+  DEFAULT_FILTER_VALUES,
+  type FeedbackFilterValues,
+} from "@/components/ui/feedback-filter-types";
+import { FeedbackFilterBar } from "@/components/ui/FeedbackFilterBar";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
@@ -27,6 +32,23 @@ const STATUS_VARIANTS: Record<
   closed: "danger",
 };
 
+const PUBLIC_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "under_review", label: "Under Review" },
+  { value: "planned", label: "Planned" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "shipped", label: "Shipped" },
+  { value: "closed", label: "Closed" },
+];
+
+function buildParams(values: FeedbackFilterValues) {
+  const params: Record<string, string> = {};
+  if (values.search.trim()) params.search = values.search.trim();
+  if (values.category) params.category = values.category;
+  if (values.status) params.status = values.status;
+  if (values.sort) params.sort = values.sort;
+  return params;
+}
+
 export function PublicBoardPage() {
   const { slug, boardSlug } = useParams();
   const queryClient = useQueryClient();
@@ -36,6 +58,7 @@ export function PublicBoardPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("feature");
   const [authorName, setAuthorName] = useState("");
+  const [filters, setFilters] = useState<FeedbackFilterValues>(DEFAULT_FILTER_VALUES);
 
   const { data, isLoading } = useQuery({
     queryKey: ["public-workspace", slug],
@@ -46,8 +69,8 @@ export function PublicBoardPage() {
   const board = data?.boards.find((b) => b.slug === boardSlug);
 
   const { data: items, isLoading: itemsLoading } = useQuery({
-    queryKey: ["public-feedback", slug, boardSlug],
-    queryFn: () => publicApi.feedback(slug!, boardSlug!).then((r) => r.data),
+    queryKey: ["public-feedback", slug, boardSlug, filters],
+    queryFn: () => publicApi.feedback(slug!, boardSlug!, buildParams(filters)).then((r) => r.data),
     enabled: !!slug && !!boardSlug,
   });
 
@@ -110,6 +133,14 @@ export function PublicBoardPage() {
         <p className="text-sm text-gray-500">{board.description}</p>
       </div>
 
+      <FeedbackFilterBar
+        categoryOptions={board.category_options}
+        statusOptions={PUBLIC_STATUS_OPTIONS}
+        values={filters}
+        onValuesChange={setFilters}
+        resultCount={items?.length}
+      />
+
       {itemsLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -159,8 +190,12 @@ export function PublicBoardPage() {
       ) : (
         <EmptyState
           icon={MessageSquare}
-          title="No feedback yet"
-          description="Be the first to submit an idea."
+          title={filters.search || filters.category || filters.status ? "No matching feedback" : "No feedback yet"}
+          description={
+            filters.search || filters.category || filters.status
+              ? "Try adjusting your search or filters."
+              : "Be the first to submit an idea."
+          }
         />
       )}
 
